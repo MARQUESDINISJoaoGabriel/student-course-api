@@ -1,3 +1,4 @@
+
 {
   "openapi": "3.0.0",
   "info": {
@@ -5,67 +6,293 @@
     "version": "1.0.0",
     "description": "API pédagogique pour gérer étudiants et cours (no DB)"
   },
-  "tags": [{ "name": "Courses", "description": "Gestion des cours" }],
+  "tags": [
+    { "name": "Students", "description": "Gestion des étudiants" },
+    { "name": "Courses", "description": "Gestion des cours" },
+    { "name": "Enrollment", "description": "Inscription / désinscription aux cours" }
+  ],
   "paths": {
-    "/courses": {
+    "/students": {
       "get": {
-        "tags": ["Courses"],
-        "summary": "Liste des cours",
-        "responses": { "200": { "description": "OK" } }
+        "tags": ["Students"],
+        "summary": "Liste des étudiants",
+        "parameters": [
+          { "name": "name", "in": "query", "schema": { "type": "string" } },
+          { "name": "email", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/StudentsListResponse" }
+              }
+            }
+          }
+        }
       },
       "post": {
-        "summary": "Créer un cours",
+        "tags": ["Students"],
+        "summary": "Créer un étudiant",
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": { "type": "string" },
-                  "teacher": { "type": "string" }
-                },
-                "required": ["title", "teacher"]
-              }
+              "schema": { "$ref": "#/components/schemas/StudentCreate" }
             }
           }
         },
         "responses": {
-          "201": { "description": "Créé" },
-          "400": { "description": "Paramètres invalides" }
+          "201": {
+            "description": "Créé",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Student" } } }
+          },
+          "400": { "description": "Paramètres invalides / erreur métier", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/students/{id}": {
+      "get": {
+        "tags": ["Students"],
+        "summary": "Récupérer un étudiant",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/StudentWithCoursesResponse" } } }
+          },
+          "404": { "description": "Non trouvé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Students"],
+        "summary": "Mettre à jour un étudiant",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/StudentUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Mis à jour", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Student" } } } },
+          "400": { "description": "Erreur métier", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Non trouvé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Students"],
+        "summary": "Supprimer un étudiant",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Supprimé" },
+          "400": { "description": "Impossible de supprimer (ex: inscrit à un cours)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Non trouvé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/courses": {
+      "get": {
+        "tags": ["Courses"],
+        "summary": "Liste des cours",
+        "parameters": [
+          { "name": "title", "in": "query", "schema": { "type": "string" } },
+          { "name": "teacher", "in": "query", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CoursesListResponse" } } }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Courses"],
+        "summary": "Créer un cours",
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CourseCreate" } } }
+        },
+        "responses": {
+          "201": { "description": "Créé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Course" } } } },
+          "400": { "description": "Paramètres invalides / erreur métier", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
         }
       }
     },
     "/courses/{id}": {
       "get": {
+        "tags": ["Courses"],
         "summary": "Récupérer un cours",
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
         ],
         "responses": {
-          "200": { "description": "OK" },
-          "404": { "description": "Non trouvé" }
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CourseWithStudentsResponse" } } } },
+          "404": { "description": "Non trouvé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "put": {
+        "tags": ["Courses"],
+        "summary": "Mettre à jour un cours",
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "requestBody": {
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/CourseUpdate" } } }
+        },
+        "responses": {
+          "200": { "description": "Mis à jour", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Course" } } } },
+          "400": { "description": "Erreur métier", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "404": { "description": "Non trouvé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
         }
       },
       "delete": {
+        "tags": ["Courses"],
         "summary": "Supprimer un cours",
         "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "integer" }
-          }
+          { "name": "id", "in": "path", "required": true, "schema": { "type": "integer" } }
         ],
         "responses": {
           "204": { "description": "Supprimé" },
-          "404": { "description": "Non trouvé" }
+          "404": { "description": "Non trouvé", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
         }
+      }
+    },
+    "/courses/{courseId}/students/{studentId}": {
+      "post": {
+        "tags": ["Enrollment"],
+        "summary": "Inscrire un étudiant à un cours",
+        "parameters": [
+          { "name": "courseId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "studentId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "201": { "description": "Inscrit", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EnrollResponse" } } } },
+          "400": { "description": "Erreur (cours/étudiant manquant ou règle métier)", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      },
+      "delete": {
+        "tags": ["Enrollment"],
+        "summary": "Désinscrire un étudiant d'un cours",
+        "parameters": [
+          { "name": "courseId", "in": "path", "required": true, "schema": { "type": "integer" } },
+          { "name": "studentId", "in": "path", "required": true, "schema": { "type": "integer" } }
+        ],
+        "responses": {
+          "204": { "description": "Désinscrit" },
+          "404": { "description": "Inscription non trouvée", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Student": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "name": { "type": "string" },
+          "email": { "type": "string" }
+        },
+        "required": ["id", "name", "email"]
+      },
+      "Course": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "title": { "type": "string" },
+          "teacher": { "type": "string" }
+        },
+        "required": ["id", "title", "teacher"]
+      },
+      "StudentsListResponse": {
+        "type": "object",
+        "properties": {
+          "students": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Student" }
+          },
+          "total": { "type": "integer" }
+        }
+      },
+      "CoursesListResponse": {
+        "type": "object",
+        "properties": {
+          "courses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Course" }
+          },
+          "total": { "type": "integer" }
+        }
+      },
+      "StudentCreate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" }
+        },
+        "required": ["name", "email"]
+      },
+      "StudentUpdate": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "email": { "type": "string" }
+        }
+      },
+      "CourseCreate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "teacher": { "type": "string" }
+        },
+        "required": ["title", "teacher"]
+      },
+      "CourseUpdate": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" },
+          "teacher": { "type": "string" }
+        }
+      },
+      "StudentWithCoursesResponse": {
+        "type": "object",
+        "properties": {
+          "student": { "$ref": "#/components/schemas/Student" },
+          "courses": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Course" }
+          }
+        }
+      },
+      "CourseWithStudentsResponse": {
+        "type": "object",
+        "properties": {
+          "course": { "$ref": "#/components/schemas/Course" },
+          "students": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Student" }
+          }
+        }
+      },
+      "EnrollResponse": {
+        "type": "object",
+        "properties": { "success": { "type": "boolean" } }
+      },
+      "Error": {
+        "type": "object",
+        "properties": { "error": { "type": "string" } }
       }
     }
   }
