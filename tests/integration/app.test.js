@@ -7,7 +7,7 @@ describe('API Integration Tests - Controllers', () => {
     require('../../src/services/storage').seed();
   });
 
-    // STUDENT TESTS
+  // STUDENT TESTS
   test('GET /students should list all students', async () => {
     const res = await request(app).get('/students');
     expect(res.statusCode).toBe(200);
@@ -100,7 +100,6 @@ describe('API Integration Tests - Controllers', () => {
     const res = await request(app).delete('/students/1');
     expect(res.statusCode).toBe(204);
   });
-
 
   // COURSE TESTS
   test('GET /courses should list all courses', async () => {
